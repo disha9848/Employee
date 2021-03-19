@@ -25,8 +25,7 @@ app.get('/employees/names', async (req,res) => {
 
 app.get('/employees/:id', async (req,res) => {
     const requestedId=req.params.id;
-    const user = await employeeDetails.findOne({ where: { id: requestedId}});
-    employeeDetails.findByPk(requestedId, {include : [employeeDetails.hasMany(address)]}).then((emp) => {
+    const user= employeeDetails.findByPk(requestedId, {include : [employeeDetails.hasMany(address)]}).then((emp) => {
         console.log(emp.toJSON())
     }).catch((err) => {
         console.log("Error while find address of employee : ", err)
