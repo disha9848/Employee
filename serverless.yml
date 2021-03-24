@@ -1,0 +1,92 @@
+
+
+service: aws
+frameworkVersion: '2'
+
+package:
+  exclude:
+    - lib/**
+    - data-local
+    - node_modeules
+  include:
+    - dist
+
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  lambdaHashingVersion: 20201221
+
+
+functions:
+
+  index: index.getEmployees
+    events:
+      - http:
+          path: /employees
+          method: get
+
+handler: index.getEmployeesByName
+    events:
+      - http:
+          path: '/employees/names'
+          method: get
+          request:
+            parameters:
+              paths:
+                username: true
+
+handler: index.getEmployeesById
+    events:
+      - http:
+          path: '/employees/{id}'
+          method: get
+          request:
+            parameters:
+              paths:
+                id: true
+
+handler: index.EmployeeLogin
+    events:
+      - http:
+          path: '/login'
+          method: post
+
+
+handler: index.addEmployee
+    events:
+      - http:
+          path: '/employees'
+          method: post
+          authorizer: verifyToken 
+
+handler: index.addEmployeeAddress
+    events:
+      - http:
+          path: '/employees/address'
+          method: post
+
+handler: index.updateEmployee
+    events:
+      - http:
+          path: '/employees/{id}'
+          method: put
+          authorizer: verifyToken 
+          request:
+            parameters:
+              paths:
+                id: true
+
+handler: index.deleteEmployee
+    events:
+      - http:
+          path: '/employees/{id}'
+          method: delete
+          authorizer: verifyToken 
+          request:
+            parameters:
+              paths:
+                id: true
+
+verifyToken:
+  handler: index.verifyToken

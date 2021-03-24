@@ -1,117 +1,59 @@
 const express= require('express');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
-
-const sequelize=require('./database');
-const employeeDetails = require('./employeeDetails');
-const address = require('./address');
-
-sequelize.sync().then(() => console.log('db is ready'));
+const methods= require('./methods');
 
 const app=express();
 app.use(express.json());
 
-//Associations
+module.exports.getEmployees = async (event, context, callback) => {
+    const users= await methods.getAllUsers();
+    console.log(users)
+    callback(null,users);
+  
+};
 
-app.get('/employees', async (req,res) => {
-    const users= await employeeDetails.findAll();
-    res.send(users);
-});
+module.exports.getEmployeesByName = async (event, context, callback) => {
+    const users= await methods.getUserByName(req.body.name);
+    callback(null,users);
+  
+};
 
-app.get('/employees/names', async (req,res) => {
-    const users= await employeeDetails.findAll({ where: { username: req.body.name}});
-    res.send(users);
-});
+module.exports.getEmployeesById = async (event, context, callback) => {
+    const user= await methods.getUserById(req.params.id);
+    callback(null,users);
+  
+};
 
-app.get('/employees/:id', async (req,res) => {
-    const requestedId=req.params.id;
-    const user= employeeDetails.findByPk(requestedId, {include : [employeeDetails.hasMany(address)]}).then((emp) => {
-        console.log(emp.toJSON())
-    }).catch((err) => {
-        console.log("Error while find address of employee : ", err)
-      })
-    res.send(user);
-});
+module.exports.EmployeeLogin = async (event, context, callback) => {
+    const response= await methods.userLogin(req.body.password,req.body.email);
+    callback(null,users);
+  
+};
 
-app.post('/login', async (req,res) => {
-    const employee = {
-        password: req.body.password,
-        email: req.body.email
-    }
-    const user = await employeeDetails.findOne({ where: { email: employee.email}});
-    if(user==null){
-        //res.send("User not found")
-        jwt.sign({user}, 'secretkey',{ expiresIn: '30m' }, (err,token) => {
-            res.json({
-                token
-            });
-        });
-    }
-    if(user.role=="admin"){
-        if(bcrypt.compareSync(employee.password, user.password)){
-            jwt.sign({user}, 'secretkey',{ expiresIn: '30m' }, (err,token) => {
-                res.json({
-                    token
-                });
-            });
-        }else{
-            res.send("Wrong password")
-        }
-    }else{
-        res.send("User is not an admin")
-    }
-})
+module.exports.addEmployee = async (event, context, callback) => {
+    const response= await methods.addUser(req.body.username,req.body.role,req.body.email, req.body.password,req.token);
+    callback(null,users);
+  
+};
 
-app.post('/employees', verifyToken ,async (req,res) => {
-    jwt.verify(req.token, 'secretkey', (err) => {
-        if(err){
-            res.sendStatus(403);
-        }else{       
-            let saltRounds=10;
-            const salt = bcrypt.genSaltSync(saltRounds);
-            const hashpassword = bcrypt.hashSync(req.body.password, salt);
-            req.body.password=hashpassword;
-            employeeDetails.create(req.body)
-            res.send('user is inserted');
-        }
-    });
-});
+module.exports.addEmployeeAddress = async (event, context, callback) => {
+    const response= await methods.addAddress(req.body.employeeDetailId,req.body.address1,req.body.city, req.body.state,req.body.country,req.body.pincode);
+    callback(null,users);
+  
+};
 
-app.post('/employees/address' , async (req,res) => {
-    address.create(req.body)
-    res.send('address is inserted');
-});
+module.exports.updateEmployee = async (event, context, callback) => {
+    const user =await methods.updateUser(req.params.id,req.body.username, req.body.email,req.token);
+    callback(null,users);
+  
+};
 
+module.exports.deleteEmployee = async (event, context, callback) => {
+    const user =await methods.deleteUser(req.params.id,req.token);
+    callback(null,users);
+  
+};
 
-app.put('/employees/:id', verifyToken ,async (req,res) => {
-    const requestedId=req.params.id;
-    const user =await employeeDetails.findOne({ where: { id: requestedId}});
-    jwt.verify(req.token, 'secretkey', (err) => {
-        if(err){
-            res.sendStatus(403);
-        }else{       
-            user.username=req.body.username;
-            user.email=req.body.email;
-            user.save();
-            res.send('Updated');
-        }
-    });
-});
-
-app.delete('/employees/:id', verifyToken ,async (req,res) => {
-    jwt.verify(req.token, 'secretkey', (err) => {
-        if(err){
-            res.sendStatus('token error');
-        }else{
-            console.log('reached here')
-            const requestedId=req.params.id;
-            employeeDetails.destroy({where: { id: requestedId}});
-            res.send('user is removed');
-        }
-    });
-});
-
-function verifyToken(req, res, next){
+module.exports.verifyToken = async (event, context, callback) =>{
     //get auth header value
     const bearerHeader = req.headers['authorization'];
     if(typeof bearerHeader !== 'undefined'){
@@ -120,10 +62,10 @@ function verifyToken(req, res, next){
         req.token=bearerToken;
         next();
     }else{
-        res.sendStatus(403)
+        callback(null,sendStatus(403))
     }
 }
 
-app.listen(3000, () => {
+app.listen(3008, () => {
     console.log("App is running");
 });
