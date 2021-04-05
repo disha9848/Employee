@@ -4,68 +4,86 @@ const methods= require('./methods');
 const app=express();
 app.use(express.json());
 
-module.exports.getEmployees = async (event, context, callback) => {
+module.exports.getEmployees = async () => {
     const users= await methods.getAllUsers();
-    console.log(users)
-    callback(null,users);
+    return formatResponse(200,users)
   
 };
 
-module.exports.getEmployeesByName = async (event, context, callback) => {
-    const users= await methods.getUserByName(event.body.name);
-    callback(null,users);
+
+module.exports.getEmployeesById = async (event) => {
+    console.log(event.pathParameters.id)
+    const users= await methods.getUserById(event.pathParameters.id);
+    return formatResponse(200,users)
   
 };
 
-module.exports.getEmployeesById = async (event, context, callback) => {
-    const user= await methods.getUserById(event.params.id);
-    callback(null,users);
+module.exports.getEmployeesByName = async (event) => {
+    console.log(event)
+    const users= await methods.getUserByName(event.pathParameters.name);
+    return formatResponse(200,users)
   
 };
 
-module.exports.EmployeeLogin = async (event, context, callback) => {
-    const response= await methods.userLogin(event.body.password,event.body.email);
-    callback(null,users);
+module.exports.EmployeeLogin = async (event) => {
+    const body= JSON.parse(event.body)
+    const response= await methods.userLogin(body.password,body.email);
+    return formatResponse(200,response)
   
 };
 
-module.exports.addEmployee = async (event, context, callback) => {
-    const response= await methods.addUser(event.body.username,event.body.role,event.body.email, event.body.password,event.token);
-    callback(null,users);
+module.exports.addEmployee =async (event) => {
+    console.log(event.headers.Authorization)
+    const bearer=event.headers.Authorization.split(' ');
+    const bearerToken= bearer[1];
+    event.headers.Authorization=bearerToken;
+    const body= JSON.parse(event.body)
+    const response= await methods.addUser(body.username, body.role, body.email, body.password,event.headers.Authorization);
+    return formatResponse(200,response)
   
 };
 
-module.exports.addEmployeeAddress = async (event, context, callback) => {
-    const response= await methods.addAddress(event.body.employeeDetailId,event.body.address1,event.body.city, event.body.state,event.body.country,event.body.pincode);
-    callback(null,users);
+module.exports.addEmployeeAddress =async (event) => {
+    const body= JSON.parse(event.body)
+    const response= await methods.addAddress(body.employeeDetailId,body.address1,body.city, body.state,body.country,body.pincode);
+    return formatResponse(200,response)
   
 };
 
-module.exports.updateEmployee = async (event, context, callback) => {
-    const user =await methods.updateUser(event.params.id,event.body.username, event.body.email,event.token);
-    callback(null,users);
+module.exports.updateEmployee =async (event) => {
+    console.log(event.headers.Authorization)
+    const bearer=event.headers.Authorization.split(' ');
+    const bearerToken= bearer[1];
+    event.headers.Authorization=bearerToken;
+    const body= JSON.parse(event.body)
+    const response= await methods.updateUser(event.pathParameters.id,body.username, body.email,event.headers.Authorization);
+    return formatResponse(200,response)
   
 };
 
-module.exports.deleteEmployee = async (event, context, callback) => {
-    const user =await methods.deleteUser(event.params.id,event.token);
-    callback(null,users);
+module.exports.deleteEmployee =async (event) => {
+    const bearer=event.headers.Authorization.split(' ');
+    const bearerToken= bearer[1];
+    event.headers.Authorization=bearerToken;
+    console.log(event.headers.Authorization)
+    const response= await methods.deleteUser(event.pathParameters.id,event.headers.Authorization);
+    return formatResponse(200,response)
   
 };
 
-module.exports.verifyToken = async (event, context, callback) =>{
-    //get auth header value
-    const bearerHeader = req.headers['authorization'];
-    if(typeof bearerHeader !== 'undefined'){
-        const bearer=bearerHeader.split(' ');
-        const bearerToken= bearer[1];
-        event.token=bearerToken;
-        next();
-    }else{
-        callback(null,sendStatus(403))
-    }
-}
+const formatResponse = function(statusCode, body) {
+    const response = {
+        statusCode: statusCode,
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Content-Type": "application/json"
+        },
+        isBase64Encoded: false,
+        body: JSON.stringify(body)
+    };
+    return response;
+};
 
-app.listen(3008, () => {
+app.listen(3002, () => {
     console.log("App is running");
 });
