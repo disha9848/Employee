@@ -4,6 +4,8 @@ const methods= require('./methods');
 const app=express();
 app.use(express.json());
 
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./swagger.json');
 module.exports.getEmployees = async () => {
     const users= await methods.getAllUsers();
     return formatResponse(200,users)
@@ -83,6 +85,8 @@ const formatResponse = function(statusCode, body) {
     };
     return response;
 };
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.listen(3002, () => {
     console.log("App is running");
